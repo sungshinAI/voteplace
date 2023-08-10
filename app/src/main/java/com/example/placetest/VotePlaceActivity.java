@@ -17,11 +17,16 @@ import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VotePlaceActivity extends AppCompatActivity {
     private DatabaseReference placesRef = FirebaseDatabase.getInstance().getReference("places");
 
     private RadioGroup placeRadioGroup;
     private Button voteButton;
+
+    private List<Place> placeList = new ArrayList<>();  // 장소 목록을 저장할 리스트
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,12 +78,19 @@ public class VotePlaceActivity extends AppCompatActivity {
         placesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                placeRadioGroup.removeAllViews();
+                placeList.clear();  // 리스트 초기화
+
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     String placeName = snapshot.getKey();
+                    Place place = new Place(placeName);  // 장소 객체 생성
+                    placeList.add(place);  // 리스트에 추가
+                }
 
+                // 장소 목록을 라디오 버튼으로 표시
+                placeRadioGroup.removeAllViews();
+                for (Place place : placeList) {
                     RadioButton radioButton = new RadioButton(VotePlaceActivity.this);
-                    radioButton.setText(placeName);
+                    radioButton.setText(place.getName());
 
                     placeRadioGroup.addView(radioButton);
                 }
@@ -91,4 +103,3 @@ public class VotePlaceActivity extends AppCompatActivity {
         });
     }
 }
-
