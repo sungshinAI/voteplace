@@ -81,7 +81,7 @@ public class VotePlaceActivity extends AppCompatActivity {
                 placeList.clear();  // 리스트 초기화
 
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String placeName = snapshot.getKey();
+                    String placeName = snapshot.getValue(String.class);   // 등록한 장소 이름을 가져옴
                     Place place = new Place(placeName);  // 장소 객체 생성
                     placeList.add(place);  // 리스트에 추가
                 }
@@ -91,6 +91,22 @@ public class VotePlaceActivity extends AppCompatActivity {
                 for (Place place : placeList) {
                     RadioButton radioButton = new RadioButton(VotePlaceActivity.this);
                     radioButton.setText(place.getName());
+
+                    // 장소의 투표 수를 가져와서 표시
+                    placesRef.child(place.getName()).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            Long votes = dataSnapshot.getValue(Long.class);
+                            if (votes != null) {
+                                radioButton.append(" (투표 수: " + votes + ")");
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            // 처리 중 오류 발생 시 처리
+                        }
+                    });
 
                     placeRadioGroup.addView(radioButton);
                 }

@@ -36,7 +36,7 @@ public class ShowResultsActivity extends AppCompatActivity {
                 placeList.clear();
 
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String placeName = snapshot.getKey();
+                    String placeName = snapshot.getValue(String.class);  // 등록한 장소 이름을 가져옴
                     Place place = new Place(placeName);
                     placeList.add(place);
                 }
