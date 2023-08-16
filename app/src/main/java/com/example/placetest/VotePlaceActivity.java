@@ -7,8 +7,11 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -21,12 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VotePlaceActivity extends AppCompatActivity {
+
     private DatabaseReference placesRef = FirebaseDatabase.getInstance().getReference("places");
 
     private RadioGroup placeRadioGroup;
     private Button voteButton;
 
-    private List<Place> placeList = new ArrayList<>();  // 장소 목록을 저장할 리스트
+    private List<String> placeNames = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +40,7 @@ public class VotePlaceActivity extends AppCompatActivity {
         placeRadioGroup = findViewById(R.id.placeRadioGroup);
         voteButton = findViewById(R.id.voteButton);
 
-        loadPlaces();
+        loadPlaceNames();
 
         voteButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -46,75 +50,64 @@ public class VotePlaceActivity extends AppCompatActivity {
                     RadioButton selectedRadioButton = findViewById(selectedId);
                     String selectedPlaceName = selectedRadioButton.getText().toString();
 
-                    // 선택한 장소에 투표
-                    placesRef.child(selectedPlaceName).runTransaction(new Transaction.Handler() {
-                        @Override
-                        public Transaction.Result doTransaction(MutableData mutableData) {
-                            Long votes = mutableData.getValue(Long.class);
-                            if (votes == null) {
-                                votes = 1L;
-                            } else {
-                                votes++;
-                            }
-                            mutableData.setValue(votes);
-                            return Transaction.success(mutableData);
-                        }
-
-                        @Override
-                        public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
-                            if (databaseError != null) {
-                                // 업데이트 중 오류 처리
-                            } else {
-                                Toast.makeText(VotePlaceActivity.this, "투표가 완료되었습니다.", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
+                    voteForPlace(selectedPlaceName);
                 }
             }
         });
     }
 
-    private void loadPlaces() {
+    private void loadPlaceNames() {
         placesRef.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                placeList.clear();  // 리스트 초기화
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                placeNames.clear();
 
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String placeName = snapshot.getValue(String.class);   // 등록한 장소 이름을 가져옴
-                    Place place = new Place(placeName);  // 장소 객체 생성
-                    placeList.add(place);  // 리스트에 추가
+                    String placeName = snapshot.getKey();   // 장소 이름 가져옴
+                    placeNames.add(placeName);
                 }
 
-                // 장소 목록을 라디오 버튼으로 표시
-                placeRadioGroup.removeAllViews();
-                for (Place place : placeList) {
-                    RadioButton radioButton = new RadioButton(VotePlaceActivity.this);
-                    radioButton.setText(place.getName());
-
-                    // 장소의 투표 수를 가져와서 표시
-                    placesRef.child(place.getName()).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            Long votes = dataSnapshot.getValue(Long.class);
-                            if (votes != null) {
-                                radioButton.append(" (투표 수: " + votes + ")");
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                            // 처리 중 오류 발생 시 처리
-                        }
-                    });
-
-                    placeRadioGroup.addView(radioButton);
-                }
+                setupRadioButtons();
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
+            public void onCancelled(@NonNull DatabaseError databaseError) {
                 // 처리 중 오류 발생 시 처리
+            }
+        });
+    }
+
+    private void setupRadioButtons() {
+        placeRadioGroup.removeAllViews();
+
+        for (String placeName : placeNames) {
+            RadioButton radioButton = new RadioButton(VotePlaceActivity.this);
+            radioButton.setText(placeName);
+            placeRadioGroup.addView(radioButton);
+        }
+    }
+
+    private void voteForPlace(String placeName) {
+        placesRef.child(placeName).runTransaction(new Transaction.Handler() {
+            @Override
+            public Transaction.Result doTransaction(MutableData mutableData) {
+                Long votes = mutableData.child("votes").getValue(Long.class);
+                if (votes == null) {
+                    votes = 1L;
+                } else {
+                    votes++;
+                }
+                mutableData.child("votes").setValue(votes);
+                return Transaction.success(mutableData);
+            }
+
+            @Override
+            public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
+                if (databaseError != null) {
+                    // 업데이트 중 오류 처리
+                } else {
+                    Toast.makeText(VotePlaceActivity.this, "투표가 완료되었습니다.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

@@ -2,16 +2,18 @@ package com.example.placetest;
 
 public class Place {
     private String name;
+    private Long votes;
 
-    public Place() {
-        // 기본 생성자 필요 (Firebase에서 객체로 변환하기 위함)
-    }
-
-    public Place(String name) {
+    public Place(String name, Long votes) {
         this.name = name;
+        this.votes = votes;
     }
 
     public String getName() {
         return name;
+    }
+
+    public Long getVotes() {
+        return votes;
     }
 }

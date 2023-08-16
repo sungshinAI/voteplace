@@ -1,11 +1,9 @@
 package com.example.placetest;
 
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -30,16 +28,15 @@ public class RegisterPlaceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String placeName = placeNameEditText.getText().toString();
-                if (!TextUtils.isEmpty(placeName)) {
-                    // 새로운 장소 등록
-                    String newPlaceKey = placesRef.push().getKey();
-                    placesRef.child(newPlaceKey).setValue(placeName);
-
-                    Toast.makeText(RegisterPlaceActivity.this, "장소가 등록되었습니다.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(RegisterPlaceActivity.this, "장소 이름을 입력하세요.", Toast.LENGTH_SHORT).show();
+                if (!placeName.isEmpty()) {
+                    registerPlace(placeName);
                 }
             }
         });
+    }
+
+    private void registerPlace(String placeName) {
+        placesRef.child(placeName).child("votes").setValue(0L);
+        finish(); // 액티비티 종료
     }
 }
